@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diwali Dhamaka – Office Game</title>
+<style>
+:root{color-scheme:dark;--bg:#1a0b2e;--bg2:#3b0f4a;--gold:#ffc83d;--orange:#ff7a1a;--text:#fff4e0;--card:#2a1245;--exp:#ff7a1a;--self:#2ec4b6;--fun:#e83f8d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0%,var(--bg2),var(--bg) 70%);color:var(--text);font-family:Georgia,"Times New Roman",serif;background-color:var(--bg)}
+header{text-align:center;padding:24px 12px 8px}
+h1{margin:0;font-size:clamp(28px,5vw,52px);color:var(--gold);text-shadow:0 0 24px rgba(255,160,40,.6)}
+header p{margin:6px 0 0;opacity:.85;font-size:clamp(14px,2vw,18px)}
+.bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:12px}
+button{font:inherit;cursor:pointer;border:0;border-radius:999px;padding:10px 20px;background:var(--gold);color:#2b1200;font-weight:bold}
+button.ghost{background:transparent;color:var(--gold);border:2px solid var(--gold)}
+.legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:14px;padding-bottom:8px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:14px;max-width:960px;margin:0 auto;padding:12px 18px 40px}
+.diya{aspect-ratio:1;border-radius:20px;background:var(--card);border:2px solid var(--c);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:30px;padding:0;box-shadow:0 0 18px color-mix(in srgb,var(--c) 45%,transparent);transition:transform .15s}
+.diya:hover{transform:scale(1.07)}
+.diya span{font-size:16px;font-weight:bold;color:var(--gold)}
+.diya.used{opacity:.3;box-shadow:none;filter:grayscale(.8)}
+#panel{display:none;position:fixed;inset:0;background:rgba(10,3,20,.94);z-index:5;align-items:center;justify-content:center;text-align:center;padding:24px;flex-direction:column;gap:18px}
+#panel.on{display:flex}
+#cat{font-size:clamp(16px,2.5vw,24px);letter-spacing:3px;text-transform:uppercase;font-weight:bold}
+#q{font-size:clamp(26px,5vw,58px);line-height:1.25;max-width:1000px;color:var(--gold);margin:0}
+#who{font-size:clamp(20px,3vw,34px);color:var(--text)}
+#timer{font-size:clamp(40px,8vw,90px);font-weight:bold;color:var(--orange);min-height:1.1em}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+details{max-width:960px;margin:0 auto;padding:0 18px 10px;text-align:center}
+summary{cursor:pointer;color:var(--gold)}
+textarea{width:100%;max-width:520px;height:110px;margin-top:8px;border-radius:12px;border:2px solid var(--gold);background:var(--card);color:var(--text);padding:10px;font:inherit}
+</style>
+</head>
+<body>
+<header>
+<h1>🪔 Diwali Dhamaka 🪔</h1>
+<p>Light a diya, answer the question!</p>
+</header>
+<div class="legend">
+<span><i class="dot" style="background:var(--exp)"></i>Experience</span>
+<span><i class="dot" style="background:var(--self)"></i>Self-projection</span>
+<span><i class="dot" style="background:var(--fun)"></i>Fun &amp; Diwali</span>
+</div>
+<div class="bar">
+<button id="rand">🎲 Random Diya</button>
+<button class="ghost" id="reset">Reset all</button>
+</div>
+<details>
+<summary>Add player names (optional, one per line)</summary>
+<textarea id="names" placeholder="Asha&#10;Rahul&#10;Priya"></textarea>
+</details>
+<div class="grid" id="grid"></div>
+
+<div id="panel">
+<div id="cat"></div>
+<p id="q"></p>
+<div id="who"></div>
+<div id="timer"></div>
+<div class="row">
+<button id="pick">👤 Pick a person</button>
+<button id="start">⏱ 30s timer</button>
+<button class="ghost" id="close">Done ✔</button>
+</div>
+</div>
+
+<script>
+const C={exp:['Experience','#ff7a1a'],self:['Self-projection','#2ec4b6'],fun:['Fun & Diwali','#e83f8d']};
+const Q=[
+['exp','What has been your best experience working here so far?'],
+['exp','What is one thing you learned here that you didn’t expect?'],
+['exp','Describe your first day here in one sentence.'],
+['exp','What is one thing you would change about how we work?'],
+['exp','Which project are you proudest of, and why?'],
+['exp','Which colleague has helped you most, and how?'],
+['exp','Describe your job to a 10-year-old.'],
+['exp','Share one thing you are grateful for at work.'],
+['self','Introduce yourself in 30 seconds, as if to a new client.'],
+['self','How would your teammates describe you in three words?'],
+['self','How do you present yourself in an important meeting?'],
+['self','How do you handle it when you disagree with your manager?'],
+['self','How do you make sure leadership notices your work?'],
+['self','What is your biggest strength at work, and how do you show it?'],
+['self','How do you stay calm when a deadline is tight?'],
+['self','What skill do you want to light up (learn) next year?'],
+['fun','What is your favourite Diwali memory?'],
+['fun','Favourite Diwali sweet – and would you fight for the last piece?'],
+['fun','Which cracker are you at work: Anar, Sparkler, Rocket or Bomb? Why?'],
+['fun','What is your Diwali wish for the team?'],
+['fun','What is the funniest thing that happened in our office?'],
+['fun','Sum up this year at work in one word.']
+];
+const used=new Set();let t=null,cur=-1,last=[];
+const $=id=>document.getElementById(id);
+function build(){
+$('grid').innerHTML='';
+Q.forEach((q,i)=>{
+const b=document.createElement('button');
+b.className='diya'+(used.has(i)?' used':'');
+b.style.setProperty('--c',C[q[0]][1]);
+b.innerHTML='🪔<span>'+(i+1)+'</span>';
+b.onclick=()=>open(i);
+$('grid').appendChild(b);
+});
+}
+function open(i){
+cur=i;used.add(i);
+const [k,q]=Q[i];
+$('cat').textContent=C[k][0];$('cat').style.color=C[k][1];
+$('q').textContent=q;$('who').textContent='';
+clearInterval(t);$('timer').textContent='';
+$('panel').classList.add('on');
+}
+function names(){return $('names').value.split('\n').map(s=>s.trim()).filter(Boolean)}
+$('pick').onclick=()=>{
+const n=names();
+if(!n.length){$('who').textContent='Add names first (optional box on main screen)';return}
+let pool=n.filter(x=>!last.includes(x));
+if(!pool.length){last=[];pool=n}
+const p=pool[Math.floor(Math.random()*pool.length)];
+last.push(p);$('who').textContent='🎤 '+p;
+};
+$('start').onclick=()=>{
+clearInterval(t);let s=30;$('timer').textContent=s;
+t=setInterval(()=>{s--;$('timer').textContent=s>0?s:'⏰ Time!';if(s<=0)clearInterval(t)},1000);
+};
+$('close').onclick=()=>{clearInterval(t);$('panel').classList.remove('on');build()};
+$('rand').onclick=()=>{
+let left=Q.map((_,i)=>i).filter(i=>!used.has(i));
+if(!left.length){used.clear();left=Q.map((_,i)=>i)}
+open(left[Math.floor(Math.random()*left.length)]);
+};
+$('reset').onclick=()=>{used.clear();last=[];build()};
+build();
+</script>
+</body>
+</html>
